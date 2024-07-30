@@ -3,5 +3,5 @@
 
 - name: set hostname
   hostname:
-    name:  "{{env}}-web-01"
+    name:  "{{env}}-{{server_role}}-01"
   become: true
