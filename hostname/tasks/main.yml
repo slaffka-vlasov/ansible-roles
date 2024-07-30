@@ -1,0 +1,7 @@
+---
+# tasks file for hostname
+
+- name: set hostname
+  hostname:
+    name:  "{{env}}-web-01"
+  become: true
