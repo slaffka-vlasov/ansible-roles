@@ -1,0 +1,48 @@
+---
+# tasks file for docker
+- block: 
+  - name: Install Docker deps
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+      state: present
+
+  - name: Add Docker key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker repo
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+      state: present
+
+  - name: Update APT cache
+    apt:
+      update_cache: yes
+
+  - name: Install Docker
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop: 
+      - "{{ docker_packages }}"
+
+  - name: Start Docker service
+    service:
+      name: docker
+      state: started
+      enabled: yes
+  
+  - name: Check if Docker group exists
+    group:
+      name: docker
+      state: present
+
+  - name: Add users to Docker group
+    user:
+      name: "{{ ansible_user_id }}"
+      groups: docker
+      append: true
+  become: true

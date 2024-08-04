@@ -1,6 +1,31 @@
 ---
 # tasks file for common
+- block:
+  - name: set SSH config
+    copy:
+      dest: /etc/ssh/sshd_config
+      content: |
+        Include /etc/ssh/sshd_config.d/*.conf
+        PermitRootLogin no
+        PubkeyAuthentication yes
+        PubkeyAcceptedKeyTypes=+ssh-rsa
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        UsePAM yes
+        X11Forwarding yes
+        PrintMotd no
+        AcceptEnv LANG LC_*
+        Subsystem       sftp    /usr/lib/openssh/sftp-server
+      force: true
+    register: set_ssh_config
 
+  - name: restart SSH
+    shell:
+      cmd: systemctl restart ssh
+    when: set_ssh_config is changed
+  
+  become: true
+        
 - name: set timezone to Europe/Moscow
   timezone:
     name: "{{ timezone }}"
@@ -12,37 +37,42 @@
   become: true
 
 - block:
-    - name: create a swap file
-      shell: fallocate -l {{ swap_size }} {{ swap_filepath }}
-      args:
-        creates: "{{ swap_filepath }}"
-      become: true
+  - name: create a swap file
+    shell: fallocate -l {{ swap_size }} {{ swap_filepath }}
+    args:
+      creates: "{{ swap_filepath }}"
 
-    - name: set the correct permissions
-      file:
-        path: "{{ swap_filepath }}"
-        owner: root
-        group: root
-        mode: '0600'
-      become: true
+  - name: set the correct permissions
+    file:
+      path: "{{ swap_filepath }}"
+      owner: root
+      group: root
+      mode: '0600'
 
-    - name: make the file a swap file
-      shell: mkswap {{ swap_filepath }}
-      when: ansible_swapfree_mb == 0
-      become: true
+  - name: make the file a swap file
+    shell: mkswap {{ swap_filepath }}
+    when: ansible_swapfree_mb == 0
 
-    - name: enable the swap file
-      shell: swapon {{ swap_filepath }}
-      when: ansible_swapfree_mb == 0
-      become: true
+  - name: enable the swap file
+    shell: swapon {{ swap_filepath }}
+    when: ansible_swapfree_mb == 0
 
-    - name: add swap file to fstab
-      mount:
-        name: none
-        src: "{{ swap_filepath }}"
-        fstype: swap
-        opts: sw
-        passno: 0
-        dump: 0
-        state: present
-      become: true
+  - name: add swap file to fstab
+    mount:
+      name: none
+      src: "{{ swap_filepath }}"
+      fstype: swap
+      opts: sw
+      passno: 0
+      dump: 0
+      state: present
+
+  become: true
+
+- name: installation packages
+  apt:
+   name: "{{ item }}"
+   state: present
+  loop:
+    - "{{ packages }}"
+  become: true

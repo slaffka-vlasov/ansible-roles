@@ -2,3 +2,12 @@
 swap_size: 1G
 timezone: Europe/Moscow
 swap_filepath: /swapfile
+packages_prod:
+  - mc
+  - htop
+  - rsync
+packages_dev:
+  - git
+  - htop
+  - zip
+ 
